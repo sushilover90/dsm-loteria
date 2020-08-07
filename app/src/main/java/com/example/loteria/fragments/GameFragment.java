@@ -1,5 +1,6 @@
 package com.example.loteria.fragments;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
@@ -48,6 +49,9 @@ public class GameFragment extends Fragment {
 
     // played cards count textview (tv)
     TextView tvPlayedCardsCount;
+
+    // current played card textview
+    TextView tvCurrentPlayedCard;
 
 
     public GameFragment() {
@@ -113,18 +117,26 @@ public class GameFragment extends Fragment {
 
     }
 
+    @SuppressLint("SetTextI18n")
     public void setGame(View view){
 
         tvPlayedCardsCount = view.findViewById(R.id.tv_gamePlayedCardsCount);
 
         tvPlayedCardsCount.setText(String.valueOf(timesPressed));
 
+        tvCurrentPlayedCard = view.findViewById(R.id.tv_gameCurrentCard);
+
         cardButton.setImageView( (ImageView) view.findViewById(R.id.iv_current));
+
+        tvCurrentPlayedCard.setText("Press begin to start.");
 
         cardButton.getImageView().setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Toast.makeText(getActivity(), "Game has begun", Toast.LENGTH_SHORT).show();
+
+                tvCurrentPlayedCard.setText("Current played card:");
 
                 cardButton.getImageView().setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -152,9 +164,15 @@ public class GameFragment extends Fragment {
                         if(timesPressed>=54 || cardChecks >=16){
                             cardButton.getImageView().setImageResource(R.drawable.finished);
 
+                            String infoText = "Press Finished to restart.";
+
                             if(cardChecks >= 16){
                                 cardButton.getImageView().setImageResource(R.drawable.loteria_win);
+                                Toast.makeText(getActivity(), "You win", Toast.LENGTH_SHORT).show();
+                                infoText = "Press lotería to restart.";
                             }
+
+                            tvCurrentPlayedCard.setText(infoText);
 
                             cardButton.getImageView().setOnClickListener(new View.OnClickListener() {
                                 @Override
