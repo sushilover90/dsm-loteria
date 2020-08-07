@@ -6,9 +6,10 @@ public class Card {
 
     ImageView imageView;
     int card_number;
+    boolean checked;
 
     public Card(){
-
+        this.checked = false;
     }
 
     public ImageView getImageView() {
@@ -21,6 +22,14 @@ public class Card {
 
     public int getCard_number() {
         return card_number;
+    }
+
+    public boolean isChecked(){
+        return this.checked;
+    }
+
+    public void checkCard(){
+        this.checked = true;
     }
 
     public void setCard_number(int card_number) {

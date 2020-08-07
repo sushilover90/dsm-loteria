@@ -1,5 +1,6 @@
 package com.example.loteria.fragments;
 
+import android.content.Intent;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.drawable.Drawable;
@@ -11,8 +12,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.loteria.R;
+import com.example.loteria.classes.Card;
 import com.example.loteria.classes.GameEngine;
 
 import java.util.ArrayList;
@@ -20,11 +24,30 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GameFragment extends Fragment {
 
+    // for local testing, will be remove when making it with the json request
     ArrayList<Integer> cardNumbers = new ArrayList<>();
+
+    // the card *numbers* to your initial 16 cards (board)
     ArrayList<Integer> boardCardNumbers = new ArrayList<>();
-    ImageView[] board = new ImageView[16];
+
+    // 16 checks to win
+    int cardChecks;
+
+    // only 54 times presses are allowed (54 cards max)
+    int timesPressed;
+
+    // your game board
+    Card[] board = new Card[16];
+
+    // game card button (to begin game/ask for a card)
+    Card cardButton = new Card();
+
+    // grayscale and "bean"
     Drawable bean;
     ColorMatrixColorFilter filter;
+
+    // played cards count textview (tv)
+    TextView tvPlayedCardsCount;
 
 
     public GameFragment() {
@@ -34,8 +57,13 @@ public class GameFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        timesPressed = 0;
+
+        cardChecks = 0;
+
         bean = getActivity().getDrawable(R.drawable.ic_launcher_foreground);
 
+        // for grayscale and place the "bean" over the image
         ColorMatrix matrix = new ColorMatrix();
         matrix.setSaturation(0);
         filter = new ColorMatrixColorFilter(matrix);
@@ -44,10 +72,14 @@ public class GameFragment extends Fragment {
             cardNumbers.add(i);
         }
 
+        for(int i = 0; i<board.length;i++){
+            board[i] = new Card();
+        }
+
         boardCardNumbers.add(ThreadLocalRandom.current().nextInt(0,54));
         boolean repeatedNumber;
 
-        for (int i = 0; i< board.length;){
+        for (int i = 0; i< board.length - 1;){
             repeatedNumber = false;
             int number = ThreadLocalRandom.current().nextInt(0,54);
 
@@ -72,42 +104,100 @@ public class GameFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_game, container, false);
 
-        board[0] = view.findViewById(R.id.iv_0);
-        board[0].setImageResource(GameEngine.getCard(boardCardNumbers.get(0)));
-        board[0].setColorFilter(filter);
-        board[0].setForeground(bean);
-        board[1] = view.findViewById(R.id.iv_1);
-        board[1].setImageResource(GameEngine.getCard(boardCardNumbers.get(1)));
-        board[2] = view.findViewById(R.id.iv_2);
-        board[2].setImageResource(GameEngine.getCard(boardCardNumbers.get(2)));
-        board[3] = view.findViewById(R.id.iv_3);
-        board[3].setImageResource(GameEngine.getCard(boardCardNumbers.get(3)));
-        board[4] = view.findViewById(R.id.iv_4);
-        board[4].setImageResource(GameEngine.getCard(boardCardNumbers.get(4)));
-        board[5] = view.findViewById(R.id.iv_5);
-        board[5].setImageResource(GameEngine.getCard(boardCardNumbers.get(5)));
-        board[6] = view.findViewById(R.id.iv_6);
-        board[6].setImageResource(GameEngine.getCard(boardCardNumbers.get(6)));
-        board[7] = view.findViewById(R.id.iv_7);
-        board[7].setImageResource(GameEngine.getCard(boardCardNumbers.get(7)));
-        board[8] = view.findViewById(R.id.iv_8);
-        board[8].setImageResource(GameEngine.getCard(boardCardNumbers.get(8)));
-        board[9] = view.findViewById(R.id.iv_9);
-        board[9].setImageResource(GameEngine.getCard(boardCardNumbers.get(9)));
-        board[10] = view.findViewById(R.id.iv_10);
-        board[10].setImageResource(GameEngine.getCard(boardCardNumbers.get(10)));
-        board[11] = view.findViewById(R.id.iv_11);
-        board[11].setImageResource(GameEngine.getCard(boardCardNumbers.get(11)));
-        board[12] = view.findViewById(R.id.iv_12);
-        board[12].setImageResource(GameEngine.getCard(boardCardNumbers.get(12)));
-        board[13] = view.findViewById(R.id.iv_13);
-        board[13].setImageResource(GameEngine.getCard(boardCardNumbers.get(13)));
-        board[14] = view.findViewById(R.id.iv_14);
-        board[14].setImageResource(GameEngine.getCard(boardCardNumbers.get(14)));
-        board[15] = view.findViewById(R.id.iv_15);
-        board[15].setImageResource(GameEngine.getCard(boardCardNumbers.get(15)));
+        setGame(view);
 
         return view;
+    }
+
+    public void askCard(){
+
+    }
+
+    public void setGame(View view){
+
+        tvPlayedCardsCount = view.findViewById(R.id.tv_gamePlayedCardsCount);
+
+        tvPlayedCardsCount.setText(String.valueOf(timesPressed));
+
+        cardButton.setImageView( (ImageView) view.findViewById(R.id.iv_current));
+
+        cardButton.getImageView().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getActivity(), "Game has begun", Toast.LENGTH_SHORT).show();
+
+                cardButton.getImageView().setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        timesPressed++;
+
+                        int cardNumber = cardNumbers.get(ThreadLocalRandom.current().nextInt(0, cardNumbers.size()));
+                        cardNumbers.remove((Integer) cardNumber);
+
+                        tvPlayedCardsCount.setText(String.valueOf(timesPressed));
+
+                        cardButton.getImageView().setImageResource(GameEngine.getCard(cardNumber));
+
+                        for (Card card : board) {
+                            if (cardNumber == card.getCard_number() && !card.isChecked()) {
+                                card.getImageView().setForeground(bean);
+                                card.getImageView().setColorFilter(filter);
+                                card.checkCard();
+                                cardChecks++;
+                                break;
+                            }
+                        }
+
+                        if(timesPressed>=54 || cardChecks >=16){
+                            cardButton.getImageView().setImageResource(R.drawable.finished);
+
+                            if(cardChecks >= 16){
+                                cardButton.getImageView().setImageResource(R.drawable.loteria_win);
+                            }
+
+                            cardButton.getImageView().setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Intent intent = getActivity().getIntent();
+                                    getActivity().finish();
+                                    startActivity(intent);
+                                }
+                            });
+                        }
+
+                    }
+                });
+
+                cardButton.getImageView().performClick();
+
+            }
+        });
+
+        board[0].setImageView( (ImageView) view.findViewById(R.id.iv_0));
+        board[1].setImageView( (ImageView) view.findViewById(R.id.iv_1));
+        board[2].setImageView( (ImageView) view.findViewById(R.id.iv_2));
+        board[3].setImageView( (ImageView) view.findViewById(R.id.iv_3));
+        board[4].setImageView( (ImageView) view.findViewById(R.id.iv_4));
+        board[5].setImageView( (ImageView) view.findViewById(R.id.iv_5));
+        board[6].setImageView( (ImageView) view.findViewById(R.id.iv_6));
+        board[7].setImageView( (ImageView) view.findViewById(R.id.iv_7));
+        board[8].setImageView( (ImageView) view.findViewById(R.id.iv_8));
+        board[9].setImageView( (ImageView) view.findViewById(R.id.iv_9));
+        board[10].setImageView( (ImageView) view.findViewById(R.id.iv_10));
+        board[11].setImageView( (ImageView) view.findViewById(R.id.iv_11));
+        board[12].setImageView( (ImageView) view.findViewById(R.id.iv_12));
+        board[13].setImageView( (ImageView) view.findViewById(R.id.iv_13));
+        board[14].setImageView( (ImageView) view.findViewById(R.id.iv_14));
+        board[15].setImageView( (ImageView) view.findViewById(R.id.iv_15));
+
+        for(int i = 0; i<board.length;i++){
+
+            board[i].getImageView().setImageResource(GameEngine.getCard(boardCardNumbers.get(i)));
+            board[i].setCard_number(boardCardNumbers.get(i));
+
+        }
+
     }
 
 }
